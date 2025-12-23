@@ -1,6 +1,6 @@
-# API de Consulta de Inadimplência - validaAPI Integration
+# API de Gestão de Pessoas - Clean Architecture
 
-> Sistema de gestão de pessoas e consulta de inadimplência integrado com a API validaAPI Experian, desenvolvido com **Clean Architecture** em Node.js + TypeScript.
+> Sistema de gestão de pessoas com consulta local de dados de dívidas, desenvolvido com **Clean Architecture** em Node.js + TypeScript.
 
 ---
 
@@ -30,7 +30,7 @@ src/
 └── infrastructure/      # Adaptadores externos
     ├── http/            # Controllers e Routes
     ├── database/        # Implementações de repositórios
-    ├── gateways/        # Integrações externas (validaAPI)
+    ├── gateways/        # Simuladores locais
     └── security/        # Autenticação e autorização
 ```
 
@@ -55,16 +55,16 @@ src/
 - Campos: nome, data nascimento, email, telefone, endereço
 - Validação de formato e normalização
 
-### RF02 - Consulta de Inadimplência (validaAPI)
-- Integração com API validaAPI Experian
+### RF02 - Consulta de Inadimplência (Simulador Local)
+- Simulador local de dados de dívida
 - Retorna: status, valor total, quantidade de registros, última negativação
 
 ### RF03 - Registro de Inadimplência
-- Persistência de consultas validaAPI
+- Persistência de consultas locais
 - Histórico completo de consultas
 
 ### RF04 - Atualização de Status
-- Reconsulta validaAPI
+- Reconsulta simulador local
 - Atualização automática de status
 
 ### RF05 - Consulta de Pessoa
@@ -89,7 +89,7 @@ src/
 curl -X POST http://localhost:3000/api/persons \
   -H "Content-Type: application/json" \
   -d '{
-    "cpf": "12345678900",
+    "cpf": "123.456.789-09",
     "name": "João Silva",
     "birthDate": "1990-01-15",
     "email": "joao.silva@email.com",
@@ -102,7 +102,7 @@ curl -X POST http://localhost:3000/api/persons \
 ```json
 {
   "id": 1,
-  "cpf": "12345678900",
+  "cpf": "12345678909",
   "name": "João Silva",
   "birthDate": "1990-01-15",
   "email": "joao.silva@email.com",
@@ -118,14 +118,14 @@ curl -X POST http://localhost:3000/api/persons \
 ## 2️⃣ Consultar Pessoa por CPF
 
 ```bash
-curl -X GET http://localhost:3000/api/persons/12345678900
+curl -X GET http://localhost:3000/api/persons/123.456.789-09
 ```
 
 **Resposta esperada:**
 ```json
 {
   "id": 1,
-  "cpf": "12345678900",
+  "cpf": "12345678909",
   "name": "João Silva",
   "birthDate": "1990-01-15",
   "email": "joao.silva@email.com",
@@ -136,18 +136,18 @@ curl -X GET http://localhost:3000/api/persons/12345678900
 
 ---
 
-## 3️⃣ Consultar Inadimplência no validaAPI
+## 3️⃣ Consultar Inadimplência (Simulador Local)
 
-Esta rota consulta a API do validaAPI e registra o resultado no banco de dados.
+Esta rota consulta o simulador local de dívidas e registra o resultado no banco de dados.
 
 ```bash
-curl -X GET http://localhost:3000/api/persons/12345678900/validaAPI
+curl -X GET http://localhost:3000/api/persons/123.456.789-09/serasa
 ```
 
 **Resposta esperada (INADIMPLENTE):**
 ```json
 {
-  "cpf": "12345678900",
+  "cpf": "12345678909",
   "status": "INADIMPLENTE",
   "totalAmount": 5432.50,
   "recordsCount": 3,
@@ -160,7 +160,7 @@ curl -X GET http://localhost:3000/api/persons/12345678900/validaAPI
 **Resposta esperada (ADIMPLENTE):**
 ```json
 {
-  "cpf": "12345678900",
+  "cpf": "12345678909",
   "status": "ADIMPLENTE",
   "totalAmount": 0,
   "recordsCount": 0,
@@ -172,10 +172,10 @@ curl -X GET http://localhost:3000/api/persons/12345678900/validaAPI
 
 ---
 
-## 4️⃣ Atualizar Status (Reconsultar validaAPI)
+## 4️⃣ Atualizar Status (Reconsultar Simulador Local)
 
 ```bash
-curl -X PUT http://localhost:3000/api/persons/12345678900/status
+curl -X PUT http://localhost:3000/api/persons/123.456.789-09/status
 ```
 
 **Resposta esperada:**
@@ -209,56 +209,8 @@ curl -X GET http://localhost:3000/health
 Para usar JWT nas rotas protegidas:
 
 ```bash
-curl -X GET http://localhost:3000/api/persons/12345678900/validaAPI \
+curl -X GET http://localhost:3000/api/persons/123.456.789-09/serasa \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
----
-
-## 📋 Integração com validaAPI Real
-
-### Baseado na API Anti-Fraud Scores
-
-A API validaAPI Experian segue o padrão:
-
-**Endpoint de Autenticação:**
-```
-POST https://api.validaAPIexperian.com.br/oauth/token
-Content-Type: application/x-www-form-urlencoded
-
-grant_type=client_credentials
-&client_id=SEU_CLIENT_ID
-&client_secret=SEU_CLIENT_SECRET
-```
-
-**Endpoint de Consulta:**
-```
-POST https://api.validaAPIexperian.com.br/anti-fraud-scores/v1/consultas
-Authorization: Bearer {access_token}
-Content-Type: application/json
-
-{
-  "documento": "12345678900",
-  "tipoDocumento": "CPF"
-}
-```
-
-**Resposta da API validaAPI:**
-```json
-{
-  "score": 650,
-  "risco": "MEDIO",
-  "recomendacao": "ANALISAR",
-  "negativacoes": [
-    {
-      "valor": 1500.00,
-      "dataOcorrencia": "2025-11-15",
-      "origem": "BANCO ABC"
-    }
-  ],
-  "totalNegativos": 1,
-  "valorTotal": 1500.00
-}
 ```
 
 ---
@@ -346,11 +298,8 @@ npm install
 cp .env.example .env
 ```
 
-Edite o arquivo `.env`:
+Edite o arquivo `.env` (básico para operação local):
 ```env
-validaAPI_API_URL=https://api.validaAPIexperian.com.br
-validaAPI_CLIENT_ID=seu_client_id
-validaAPI_CLIENT_SECRET=seu_client_secret
 JWT_SECRET=sua_chave_secreta_aqui
 DATABASE_PATH=./db/sqlite3.database.db
 ```
@@ -376,7 +325,7 @@ O servidor estará disponível em: **http://localhost:3000**
 **Request:**
 ```json
 {
-  "cpf": "12345678900",
+  "cpf": "123.456.789-09",
   "name": "João Silva",
   "birthDate": "1990-01-15",
   "email": "joao.silva@email.com",
@@ -389,7 +338,7 @@ O servidor estará disponível em: **http://localhost:3000**
 ```json
 {
   "id": 1,
-  "cpf": "12345678900",
+  "cpf": "12345678909",
   "name": "João Silva",
   "birthDate": "1990-01-15",
   "email": "joao.silva@email.com",
@@ -405,7 +354,7 @@ O servidor estará disponível em: **http://localhost:3000**
 ```json
 {
   "id": 1,
-  "cpf": "12345678900",
+  "cpf": "12345678909",
   "name": "João Silva",
   "birthDate": "1990-01-15",
   "email": "joao.silva@email.com"
@@ -414,12 +363,12 @@ O servidor estará disponível em: **http://localhost:3000**
 
 ---
 
-### 🔹 GET `/api/persons/:cpf/validaAPI` - Consultar Inadimplência
+### 🔹 GET `/api/persons/:cpf/serasa` - Consultar Inadimplência (Simulador Local)
 
 **Response:**
 ```json
 {
-  "cpf": "12345678900",
+  "cpf": "12345678909",
   "status": "INADIMPLENTE",
   "totalAmount": 5432.50,
   "recordsCount": 3,
@@ -464,20 +413,20 @@ O servidor estará disponível em: **http://localhost:3000**
 curl -X POST http://localhost:3000/api/persons \
   -H "Content-Type: application/json" \
   -d '{
-    "cpf": "12345678900",
+    "cpf": "123.456.789-09",
     "name": "João Silva",
     "birthDate": "1990-01-15",
     "email": "joao@email.com"
   }'
 
-# 2. Consultar validaAPI
-curl http://localhost:3000/api/persons/12345678900/validaAPI
+# 2. Consultar simulador local de dívidas
+curl http://localhost:3000/api/persons/123.456.789-09/serasa
 
 # 3. Ver dados da pessoa
-curl http://localhost:3000/api/persons/12345678900
+curl http://localhost:3000/api/persons/123.456.789-09
 
 # 4. Atualizar status
-curl -X PUT http://localhost:3000/api/persons/12345678900/status
+curl -X PUT http://localhost:3000/api/persons/123.456.789-09/status
 ```
 
 ### Com Postman
@@ -510,7 +459,7 @@ Importe a collection disponível em `API_EXAMPLES.md`
 | total_amount | DECIMAL(14,2) | Valor total da dívida |
 | records_count | INTEGER | Quantidade de registros |
 | last_negativation_date | TIMESTAMP | Data da última negativação |
-| origin | VARCHAR | Origem (validaAPI) |
+| origin | VARCHAR | Origem (LOCAL_SIMULATOR ou validaAPI) |
 | consulted_at | TIMESTAMP | Data/hora da consulta |
 | summary | TEXT | Resumo da consulta |
 | created_at | TIMESTAMP | Data de criação |
@@ -518,45 +467,39 @@ Importe a collection disponível em `API_EXAMPLES.md`
 
 ---
 
-## 🔐 Integração com validaAPI
+## 🔄 Simulador Local de Dívidas
 
-### Autenticação OAuth2
+O sistema utiliza um **simulador local** (`DebtSimulator`) para gerar dados realistas de inadimplência:
 
-```typescript
-// 1. Obter token
-POST https://api.validaAPIexperian.com.br/oauth/token
-Content-Type: application/x-www-form-urlencoded
+- **70% de chance** de estar ADIMPLENTE (sem dívidas)
+- **30% de chance** de estar INADIMPLENTE (com dívidas simuladas)
+- **Valores aleatórios** entre R$ 500 e R$ 15.000
+- **Quantidade de registros** entre 1 e 5
+- **Delay simulado** de 100-500ms para replicar latência de API
 
-grant_type=client_credentials
-&client_id={validaAPI_CLIENT_ID}
-&client_secret={validaAPI_CLIENT_SECRET}
-```
+### Exemplo de Resposta do Simulador
 
-### Consulta Anti-Fraud Scores
-
-```typescript
-// 2. Consultar CPF
-POST https://api.validaAPIexperian.com.br/anti-fraud-scores/v1/consultas
-Authorization: Bearer {access_token}
-Content-Type: application/json
-
-{
-  "documento": "12345678900",
-  "tipoDocumento": "CPF"
-}
-```
-
-**Resposta validaAPI:**
 ```json
 {
-  "score": 650,
-  "risco": "MEDIO",
-  "recomendacao": "ANALISAR",
-  "negativacoes": [...],
-  "totalNegativos": 1,
-  "valorTotal": 1500.00
+  "cpf": "12345678900",
+  "status": "INADIMPLENTE",
+  "totalAmount": 7250.75,
+  "recordsCount": 2,
+  "lastNegativationDate": "2025-11-20T10:30:00Z",
+  "summary": "2 registros de inadimplência encontrados",
+  "consultedAt": "2025-12-23T14:25:30Z"
 }
 ```
+
+### Integração Futura com validaAPI Real
+
+Para integrar a API validaAPI real no futuro, basta:
+
+1. Criar uma nova classe `SerasaGateway` implementando `IDebtGateway`
+2. Substituir `DebtSimulator` por `SerasaGateway` em `src/index.ts`
+3. Adicionar credenciais em `.env`
+
+A arquitetura baseada em interfaces permite fácil troca sem modificar use cases!
 
 ---
 
@@ -678,4 +621,4 @@ Desenvolvido com ❤️ para demonstrar **Clean Architecture** em Node.js
 
 ## 💡 Frase para Entrevista
 
-> *"Este projeto demonstra Clean Architecture em Node.js, isolando a integração com o validaAPI em um gateway e concentrando regras de negócio nos use cases. A arquitetura garante baixo acoplamento, alta testabilidade e facilita manutenção e evolução do código."*
+> *"Este projeto demonstra Clean Architecture em Node.js com um simulador local realista de dívidas, isolando a lógica de integração em um gateway reutilizável. A arquitetura baseada em interfaces garante baixo acoplamento, alta testabilidade e permite fácil migração para APIs reais sem modificar os use cases."*

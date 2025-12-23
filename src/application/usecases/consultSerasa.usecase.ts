@@ -1,46 +1,46 @@
 import { Debt } from '../../domain/entities/Debt';
+import { InadimplenciaStatus } from '../../domain/enums/InadimplenciaStatus';
 import { DebtRepository } from '../../domain/repositories/DebtRepository';
 import { PersonRepository } from '../../domain/repositories/PersonRepository';
-import { SerasaResponseDTO } from '../dto/serasa.response.dto';
+import { DebtResponseDTO } from '../dto/debt.response.dto';
 
-export interface ISerasaGateway {
-  consultCPF(cpf: string): Promise<SerasaResponseDTO>;
+export interface IDebtGateway {
+  consultCPF(cpf: string): Promise<DebtResponseDTO>;
 }
 
 export class ConsultSerasaUseCase {
   constructor(
     private readonly personRepository: PersonRepository,
     private readonly debtRepository: DebtRepository,
-    private readonly serasaGateway: ISerasaGateway
+    private readonly debtGateway: IDebtGateway
   ) {}
 
-  async execute(cpf: string): Promise<SerasaResponseDTO> {
-    console.log(`[USE CASE] ConsultSerasa - Consulting CPF: ${cpf.substring(0, 3)}***`);
+  async execute(cpf: string): Promise<DebtResponseDTO> {
+    console.log(`[USE CASE] ConsultDebt - Consulting CPF: ${cpf.substring(0, 3)}***`);
 
- 
     const person = await this.personRepository.findByCPF(cpf);
     if (!person) {
       throw new Error('Pessoa não encontrada');
     }
 
-    const serasaResponse = await this.serasaGateway.consultCPF(cpf);
+    const debtResponse = await this.debtGateway.consultCPF(cpf);
 
     const debtData = Debt.createFromSerasa({
       personId: person.id,
       cpf: cpf,
-      status: serasaResponse.status,
-      totalAmount: serasaResponse.totalAmount,
-      recordsCount: serasaResponse.recordsCount,
-      lastNegativationDate: serasaResponse.lastNegativationDate 
-        ? new Date(serasaResponse.lastNegativationDate) 
+      status: debtResponse.status as InadimplenciaStatus,
+      totalAmount: debtResponse.totalAmount,
+      recordsCount: debtResponse.recordsCount,
+      lastNegativationDate: debtResponse.lastNegativationDate 
+        ? new Date(debtResponse.lastNegativationDate) 
         : null,
-      summary: serasaResponse.summary,
+      summary: debtResponse.summary,
     });
 
     await this.debtRepository.create(debtData);
 
-    console.log(`[USE CASE] ConsultSerasa - Status: ${serasaResponse.status}`);
+    console.log(`[USE CASE] ConsultDebt - Status: ${debtResponse.status}`);
 
-    return serasaResponse;
+    return debtResponse;
   }
 }

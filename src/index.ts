@@ -1,11 +1,10 @@
- 
 import fastify from "fastify";
 import knex from "knex";
 import database from "./config/database";
 
 import { DebtRepositoryImpl } from "./infrastructure/database/DebtRepositoryImpl";
 import { PersonRepositoryImpl } from "./infrastructure/database/PersonRepositoryImpl";
-import { SerasaClient } from "./infrastructure/gateways/SerasaClient";
+import { DebtSimulator } from "./infrastructure/gateways/DebtSimulator";
 
 import { ConsultSerasaUseCase } from "./application/usecases/consultSerasa.usecase";
 import { CreatePersonUseCase } from "./application/usecases/createPerson.usecase";
@@ -25,18 +24,18 @@ console.log('[SYSTEM] Setting up dependency injection');
 const personRepository = new PersonRepositoryImpl(db);
 const debtRepository = new DebtRepositoryImpl(db);
 
-const serasaGateway = new SerasaClient();
+const debtSimulator = new DebtSimulator();
 
 const createPersonUseCase = new CreatePersonUseCase(personRepository);
 const consultSerasaUseCase = new ConsultSerasaUseCase(
   personRepository,
   debtRepository,
-  serasaGateway
+  debtSimulator
 );
 const updateStatusUseCase = new UpdateStatusUseCase(
   personRepository,
   debtRepository,
-  serasaGateway
+  debtSimulator
 );
 
 const personController = new PersonController(
