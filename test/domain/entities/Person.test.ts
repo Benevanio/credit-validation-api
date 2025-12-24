@@ -55,6 +55,7 @@ describe('Person Entity', () => {
         email: 'joao@example.com',
         phone: '11987654321',
         address: 'Rua ABC, 123',
+        isValidCPF: () => true
       };
 
       const person = Person.create(personData);
@@ -79,6 +80,7 @@ describe('Person Entity', () => {
         name: 'Maria Santos',
         birthDate: new Date('1985-05-20'),
         email: 'maria@example.com',
+        isValidCPF() { return true; }
       });
 
       const after = new Date().getTime();
@@ -97,6 +99,7 @@ describe('Person Entity', () => {
         name: 'Carlos Oliveira',
         birthDate: new Date('1992-03-10'),
         email: 'carlos@example.com',
+        isValidCPF() { return true; }
       });
 
       expect(person.phone).toBeUndefined();
