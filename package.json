@@ -4,10 +4,11 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon src/index.ts --watch src/index.ts --exec \"ts-node\"",
     "lint": "eslint . --ext .ts",
-    "migrate": "knex migrate:latest --knexfile knexfile.ts"
+    "migrate": "knex migrate:latest --knexfile knexfile.ts",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [],
   "author": "",
@@ -26,10 +27,13 @@
     "@eslint/js": "^9.39.2",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.0.3",
+    "@vitest/coverage-v8": "^4.0.16",
     "eslint": "^9.39.2",
     "nodemon": "^3.1.11",
+    "supertest": "^7.1.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.50.0"
+    "typescript-eslint": "^8.50.0",
+    "vitest": "^4.0.16"
   }
 }
